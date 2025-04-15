@@ -1,0 +1,1074 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <title>ラジオ体操動画プレイヤー</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c&display=swap" rel="stylesheet">
+    <link rel="icon" href="icon.png" type="image/png">
+    <script src="https://cdn.jsdelivr.net/npm/video-frames@1/dist/videoframes.umd.min.js"></script>
+    <style>
+    body {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          background-color: #0a0a12;
+          color: #00ffcc;
+          font-family: "M PLUS Rounded 1c", monospace;
+          padding: 20px;
+          margin: 0;
+          overflow-x: hidden;
+        }
+    
+        h1 {
+          color: #00aaff;
+          text-shadow: 0 0 5px #0066ff;
+          border-bottom: 1px solid #0066ff;
+          padding-bottom: 10px;
+          text-align: center;
+        }
+    
+        .video-container {
+          position: relative;
+          max-width: 800px;
+          margin-bottom: 20px;
+          margin-top: 30px;
+          border: 2px solid #0066ff;
+          box-shadow: 0 0 15px rgba(0, 102, 255, 0.5);
+          background: #000;
+        }
+    
+        video {
+          width: 100%;
+          display: block;
+        }
+    
+        /* 字幕スタイル */
+        video::cue {
+          background-color: rgba(0, 0, 0, 0.7) !important;
+          color: #c7dbed !important;
+          font-family: "M PLUS Rounded 1c", monospace !important;
+          text-shadow: 1px 1px 2px #000 !important;
+          outline: 3px solid #0b3e8f !important;
+          border-radius: 10px !important;
+        }
+    
+        /* カスタム動画コントロール */
+        video::-webkit-media-controls {
+          display: none !important;
+        }
+    
+        .custom-controls {
+          position: absolute;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          padding: 10px;
+          display: flex;
+          flex-direction: column;
+          opacity: 0;
+          transition: opacity 0.3s;
+        }
+    
+        .video-container:hover .custom-controls {
+          opacity: 1;
+        }
+    
+        .progress-container {
+          width: 100%;
+          height: 8px;
+          background: #001133;
+          margin-bottom: 10px;
+          cursor: pointer;
+          position: relative;
+        }
+    
+        .progress-bar {
+          height: 100%;
+          background: #00aaff;
+          width: 0%;
+          position: relative;
+        }
+    
+        .progress-bar::after {
+          content: '';
+          position: absolute;
+          right: -5px;
+          top: 50%;
+          transform: translateY(-50%);
+          width: 10px;
+          height: 10px;
+          background: #00ccff;
+          border-radius: 50%;
+          box-shadow: 0 0 5px #00ccff;
+        }
+    
+        .buttons-container {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+        }
+    
+        .left-controls, .right-controls {
+          display: flex;
+          align-items: center;
+          gap: 15px;
+        }
+    
+        .control-btn {
+          background: none;
+          border: none;
+          color: #00ccff;
+          font-size: 16px;
+          cursor: pointer;
+          transition: all 0.3s;
+        }
+    
+        .control-btn:hover {
+          color: #00ffcc;
+          text-shadow: 0 0 5px #00ffcc;
+        }
+    
+        .time-display {
+          font-size: 14px;
+          color: #00aaff;
+          box-shadow: 0.1px 0.1px 0.1px black;
+          font-family: "M PLUS Rounded 1c", monospace;
+        }
+    
+        .volume-container {
+          display: flex;
+          align-items: center;
+          gap: 5px;
+        }
+    
+        .volume-slider {
+          width: 80px;
+          -webkit-appearance: none;
+          height: 4px;
+          background: #001133;
+          outline: none;
+        }
+    
+        .volume-slider::-webkit-slider-thumb {
+          -webkit-appearance: none;
+          width: 12px;
+          height: 12px;
+          background: #00aaff;
+          border-radius: 50%;
+          cursor: pointer;
+        }
+    
+        .controls {
+          display: flex;
+          flex-direction: column;
+          gap: 15px;
+          width: 100%;
+          max-width: 800px;
+          background-color: #0f0f1a;
+          padding: 20px;
+          border: 1px solid #0066ff;
+          box-shadow: 0 0 15px rgba(0, 102, 255, 0.3);
+        }
+    
+        .control-group {
+          display: flex;
+          flex-direction: row;
+          align-items: center;
+          justify-content: flex-start;
+          gap: 10px;
+          flex-wrap: nowrap;
+        }
+    
+        .control-group label {
+          white-space: nowrap;
+          min-width: 100px;
+          text-align: right;
+          color: #00ccff;
+        }
+    
+        input[type="range"] {
+          flex-grow: 1;
+          -webkit-appearance: none;
+          height: 8px;
+          background: #001133;
+          border-radius: 5px;
+          outline: none;
+        }
+    
+        input[type="range"]::-webkit-slider-thumb {
+          -webkit-appearance: none;
+          width: 18px;
+          height: 18px;
+          background: #00aaff;
+          border-radius: 50%;
+          cursor: pointer;
+          box-shadow: 0 0 5px #00aaff;
+        }
+    
+        input[type="number"], select {
+          background-color: #001133;
+          color: #00ccff;
+          border: 1px solid #0066ff;
+          padding: 5px;
+          font-family: "M PLUS Rounded 1c", monospace;
+        }
+    
+        button {
+          background-color: #001133;
+          color: #00ccff;
+          border: 1px solid #0066ff;
+          padding: 8px 15px;
+          cursor: pointer;
+          font-family: "M PLUS Rounded 1c", monospace;
+          transition: all 0.3s;
+          align-self: flex-start;
+        }
+    
+        button:hover {
+          background-color: #0066ff;
+          color: #000;
+          box-shadow: 0 0 10px #0066ff;
+        }
+    
+        select {
+          width: 300px;
+          background-color: #001133;
+          color: #00ccff;
+          border: 1px solid #0066ff;
+          padding: 5px;
+        }
+    
+        input[type="checkbox"] {
+          -webkit-appearance: none;
+          width: 18px;
+          height: 18px;
+          background: #001133;
+          border: 1px solid #0066ff;
+          position: relative;
+        }
+    
+        input[type="checkbox"]:checked {
+          background: #0066ff;
+          box-shadow: 0 0 5px #0066ff;
+        }
+    
+        input[type="checkbox"]:checked::after {
+          content: "✓";
+          position: absolute;
+          color: #000;
+          font-size: 14px;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+        }
+    
+        /* 字幕設定用スタイル */
+        .subtitle-settings {
+          margin-top: 10px;
+          padding: 10px;
+          background-color: rgba(0, 20, 40, 0.5);
+          border: 1px solid #0066ff;
+        }
+    
+        /* 字幕サイズ調整用のCSS変数 */
+        :root {
+          --subtitle-scale: 1;
+          --subtitle-border-radius: 10px;
+        }
+    
+        video::cue {
+          font-size: calc(16px * var(--subtitle-scale)) !important;
+          line-height: 1.5 !important;
+          border-radius: var(--subtitle-border-radius) !important;
+        }
+    
+        /* 全画面時の字幕サイズ調整 */
+        .video-container:fullscreen video::cue,
+        .video-container:-webkit-full-screen video::cue,
+        .video-container:-moz-full-screen video::cue,
+        .video-container:-ms-fullscreen video::cue {
+          font-size: calc(16px * var(--subtitle-scale) * var(--fullscreen-scale, 1)) !important;
+        }
+        body {
+          margin: 0;
+          padding: 0;
+          background-color: #0a192f;
+          height: 100vh;
+          width: 100vw;
+        }
+    
+        .ripple {
+          position: absolute;
+          border-radius: 50%;
+          background: transparent;
+          border: 1px solid rgba(100, 210, 255, 0.3);
+          transform: translate(-50%, -50%);
+          pointer-events: none;
+          animation: ripple-animation 4s ease-out forwards;
+          z-index: -1;
+          position: absolute;       
+        }
+    
+        @keyframes ripple-animation {
+          0% {
+            width: 0;
+            height: 0;
+            opacity: 0.6;
+          }
+          100% {
+            width: 600px;
+            height: 600px;
+            opacity: 0;
+          }
+        }
+    
+        /* ローディングアニメーション */
+        .loading-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background-color: rgba(0, 0, 0, 0.8);
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          z-index: 9999;
+          transition: opacity 1s ease-out;
+        }
+    
+        .spinner-box {
+          width: 300px;
+          height: 300px;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          background-color: transparent;
+        }
+    
+        /* 軌道スタイル */
+        .leo {
+          position: absolute;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          border-radius: 50%;
+        }
+    
+        .blue-orbit {
+          width: 165px;
+          height: 165px;
+          border: 1px solid #91daffa5;
+          animation: spin3D 3s linear .2s infinite;
+        }
+    
+        .green-orbit {
+          width: 120px;
+          height: 120px;
+          border: 1px solid #91ffbfa5;
+          animation: spin3D 2s linear 0s infinite;
+        }
+    
+        .red-orbit {
+          width: 90px;
+          height: 90px;
+          border: 1px solid #ffca91a5;
+          animation: spin3D 1s linear 0s infinite;
+        }
+    
+        .white-orbit {
+          width: 60px;
+          height: 60px;
+          border: 2px solid #ffffff;
+          animation: spin3D 10s linear 0s infinite;
+        }
+    
+        .w1 {
+          transform: rotate3D(1, 1, 1, 90deg);
+        }
+    
+        .w2 {
+          transform: rotate3D(1, 2, .5, 90deg);
+        }
+    
+        .w3 {
+          transform: rotate3D(.5, 1, 2, 90deg);
+        }
+    
+        /* キーフレームアニメーション */
+        @keyframes spin3D {
+          from {
+            transform: rotate3d(.5,.5,.5, 360deg);
+          }
+          to {
+            transform: rotate3d(0,0,0, 0deg);
+          }
+        }
+    
+        @keyframes spin {
+          from {
+            transform: rotate(0deg);
+          }
+          to {
+            transform: rotate(360deg);
+          }
+        }
+    
+        /* フレームプレビュー */
+        .frame-preview {
+          position: absolute;
+          bottom: 30px;
+          transform: translateX(-50%);
+          width: 160px;
+          height: 90px;
+          background: #000;
+          border: 2px solid #00aaff;
+          box-shadow: 0 0 10px rgba(0, 170, 255, 0.7);
+          display: none;
+          z-index: 100;
+          pointer-events: none;
+        }
+    
+        .frame-preview img {
+          width: 100%;
+          height: 100%;
+          object-fit: contain;
+        }
+    
+        .frame-time {
+          position: absolute;
+          bottom: -25px;
+          left: 50%;
+          transform: translateX(-50%);
+          background: rgba(0, 0, 0, 0.8);
+          color: #00ccff;
+          padding: 3px 8px;
+          border-radius: 4px;
+          font-size: 12px;
+          white-space: nowrap;
+        }
+    
+        /* 右クリックメニュー */
+        .context-menu {
+          position: fixed;
+          background-color: #0f0f1a;
+          border: 1px solid #0066ff;
+          box-shadow: 0 0 15px rgba(0, 102, 255, 0.5);
+          z-index: 1000;
+          display: none;
+          min-width: 200px;
+        }
+    
+        .context-menu button {
+          width: 100%;
+          text-align: left;
+          padding: 8px 15px;
+          border: none;
+          border-bottom: 1px solid #003366;
+          background: none;
+          color: #00ccff;
+          font-family: "M PLUS Rounded 1c", monospace;
+          cursor: pointer;
+        }
+    
+        .context-menu button:hover {
+          background-color: #0066ff;
+          color: #000;
+        }
+    
+        /* 音声/字幕のみモード */
+        .audio-only-mode {
+          position: absolute;
+          top: 10px;
+          right: 10px;
+          background: rgba(0, 0, 0, 0.7);
+          color: #00ccff;
+          padding: 5px 10px;
+          border-radius: 4px;
+          font-size: 12px;
+          display: none;
+          z-index: 10;
+        }
+    
+        .audio-only-mode.active {
+          display: block;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- ローディングオーバーレイ -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner-box">
+            <div class="blue-orbit leo">
+            </div>
+            <div class="green-orbit leo">
+            </div>
+            <div class="red-orbit leo">
+            </div>
+            <div class="white-orbit w1 leo">
+            </div>
+            <div class="white-orbit w2 leo">
+            </div>
+            <div class="white-orbit w3 leo">
+            </div>
+        </div>
+    </div>
+    <div id="ripple-container">
+    </div>
+    <!-- フレームプレビュー -->
+    <div class="frame-preview" id="framePreview">
+        <img id="previewImage" src="">
+        <div class="frame-time" id="frameTime">
+        </div>
+    </div>
+    <!-- 右クリックメニュー -->
+    <div class="context-menu" id="contextMenu">
+        <button onclick="togglePlayPause()">再生/一時停止</button>
+        <button onclick="toggleMute()">ミュート切り替え</button>
+        <button onclick="toggleSubtitles()">字幕表示切り替え</button>
+        <button onclick="toggleAudioOnlyMode()">音声/字幕のみモード</button>
+        <button onclick="goFullscreen()">全画面表示</button>
+    </div>
+    <!-- 音声/字幕のみモード表示 -->
+    <div class="audio-only-mode" id="audioOnlyModeIndicator">音声/字幕のみモード</div>
+    <h1>ラジオ体操動画プレイヤー
+        <br>For Kushihara</h1>
+    <div class="controls">
+        <div class="control-group">
+            <label for="videoSelect">動画の音量：</label>
+            <select id="videoSelect">
+                <option value="v.mp4">小</option>
+                <option value="v-2.mp4">大(+50dB)</option>
+            </select>
+        </div>
+        <div class="control-group">
+            <label for="speedRange">再生速度：</label>
+            <input type="range" id="speedRange" min="0.0001" max="10" step="0.0001" value="1" style="width:700px !important;">
+            <input type="number" id="speedInput" min="0.0001" step="0.0001" value="1">
+        </div>
+        <div class="control-group">
+            <label for="volumeRange">音量：</label>
+            <input type="range" id="volumeRange" min="0" max="1" step="0.01" value="1">
+            <input type="number" id="volumeInput" min="0" max="1" step="0.01" value="1">
+        </div>
+        <div class="control-group">
+            <label for="loopCheckbox">ループ再生：</label>
+            <input type="checkbox" id="loopCheckbox" checked>
+        </div>
+        <!-- 字幕設定セクション -->
+        <div class="subtitle-settings">
+            <div class="control-group">
+                <label for="subtitleToggle">字幕表示：</label>
+                <input type="checkbox" id="subtitleToggle" checked>
+            </div>
+            <div class="control-group">
+                <label for="subtitleSize">文字サイズ：</label>
+                <input type="range" id="subtitleSize" min="0.5" max="5" step="0.1" value="1.5">
+                <input type="number" id="subtitleSizeInput" min="0.01" step="0.01" value="1.5">
+            </div>
+            <div class="control-group">
+                <label for="subtitleTrack">字幕トラック：</label>
+                <select id="subtitleTrack">
+                    <option value="v.vtt">日本語</option>
+                    <option value="">字幕なし</option>
+                </select>
+            </div>
+        </div>
+        <div class="control-group">
+            <button onclick="goFullscreen()">全画面</button>
+            <button onclick="toggleAudioOnlyMode()">音声/字幕のみモード</button>
+        </div>
+    </div>
+    <div class="video-container">
+        <video id="videoPlayer" src="v.mp4">
+            <track id="subtitleTrackElement" kind="subtitles" src="v.vtt" srclang="ja" label="日本語" default>
+            </track>
+        </video>
+        <div class="preview-container" id="previewContainer">
+            <img id="preview" style="max-width: 200px; max-height: 150px;">
+            <div class="preview-time" id="previewTime"></div>
+        </div>
+        <div class="custom-controls">
+            <div class="progress-container" id="progressContainer">
+                <div class="progress-bar" id="progressBar">
+                </div>
+            </div>
+            <div class="buttons-container">
+                <div class="left-controls">
+                    <button class="control-btn" id="playPauseBtn">▶</button>
+                    <span class="time-display" id="timeDisplay">00:00 / 00:00</span>
+                </div>
+                <div class="right-controls">
+                    <div class="volume-container">
+                        <button class="control-btn" id="volumeBtn">🔊</button>
+                        <input type="range" class="volume-slider" id="volumeSlider" min="0" max="1" step="0.01" value="1">
+                    </div>
+                    <button class="control-btn" id="subtitleBtn" title="字幕">🔤</button>
+                    <button class="control-btn" id="fullscreenBtn">⛶</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <canvas id="canvas">
+    </canvas>
+    <!-- サムネイル用の非表示video要素 -->
+    <video id="video-for-thumbnail" src="v.mp4" preload="auto" style="display:none;">
+    </video>
+    <script>
+    const video = document.getElementById('videoPlayer');
+        const videoSelect = document.getElementById('videoSelect');
+        const speedRange = document.getElementById('speedRange');
+        const speedInput = document.getElementById('speedInput');
+        const volumeRange = document.getElementById('volumeRange');
+        const volumeInput = document.getElementById('volumeInput');
+        const loopCheckbox = document.getElementById('loopCheckbox');
+        const playPauseBtn = document.getElementById('playPauseBtn');
+        const progressBar = document.getElementById('progressBar');
+        const progressContainer = document.getElementById('progressContainer');
+        const timeDisplay = document.getElementById('timeDisplay');
+        const volumeBtn = document.getElementById('volumeBtn');
+        const volumeSlider = document.getElementById('volumeSlider');
+        const fullscreenBtn = document.getElementById('fullscreenBtn');
+        const subtitleBtn = document.getElementById('subtitleBtn');
+        const subtitleToggle = document.getElementById('subtitleToggle');
+        const subtitleSize = document.getElementById('subtitleSize');
+        const subtitleSizeInput = document.getElementById('subtitleSizeInput');
+        const subtitleTrack = document.getElementById('subtitleTrack');
+        const subtitleTrackElement = document.getElementById('subtitleTrackElement');
+        const videoContainer = document.querySelector('.video-container');
+        const framePreview = document.getElementById('framePreview');
+        const previewImage = document.getElementById('previewImage');
+        const frameTime = document.getElementById('frameTime');
+        const audioOnlyModeIndicator = document.getElementById('audioOnlyModeIndicator');
+        const contextMenu = document.getElementById('contextMenu');
+        const previewContainer = document.getElementById('previewContainer');
+        const preview = document.getElementById('preview');
+        const previewTime = document.getElementById('previewTime');
+        const VideoForThumbnail = document.getElementById('video-for-thumbnail');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // 初期設定
+        video.controls = false;
+        let isDragging = false;
+        let subtitlesEnabled = true;
+        let normalVideoWidth = videoContainer.clientWidth;
+        let isAudioOnlyMode = false;
+        let frameCache = {};
+        let isHoveringProgress = false;
+        let hoverTimeout;
+        let videoBlob = null;
+    
+        // ローディングアニメーションをフェードアウト
+        window.addEventListener('load', function() {
+          setTimeout(function() {
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            loadingOverlay.style.opacity = '0';
+            setTimeout(function() {
+              loadingOverlay.style.display = 'none';
+            }, 1000);
+          }, 1500);
+          
+          // 動画をBlobとしてキャッシュ
+          fetch(video.src)
+            .then(response => response.blob())
+            .then(blob => {
+              videoBlob = blob;
+            });
+        });
+    
+        // 波紋エフェクトのコードは元のままなので省略...
+    
+        function updatePlaybackRate(value) {
+          const speed = parseFloat(value);
+          speedInput.value = speed;
+          speedRange.value = speed;
+          video.playbackRate = speed;
+        }
+    
+        function updateVolume(value) {
+          const volume = parseFloat(value);
+          volumeInput.value = volume;
+          volumeRange.value = volume;
+          volumeSlider.value = volume;
+          video.volume = volume;
+          
+          if (volume === 0) {
+            volumeBtn.textContent = '🔇';
+          } else if (volume < 0.5) {
+            volumeBtn.textContent = '🔈';
+          } else {
+            volumeBtn.textContent = '🔊';
+          }
+        }
+    
+        // 動画ソース変更時にサムネイル用動画も更新
+        function handleVideoChange() {
+          const selected = videoSelect.value;
+      
+          if (selected === 'v-2.mp4') {
+            const confirmPlay = confirm("この動画は音量が大きいです。あらかじめ、デバイスの音量をある程度下げてください。また、音割れが起きます。再生してもよろしいですか？");
+            if (!confirmPlay) {
+              videoSelect.value = video.src.split('/').pop();
+              return;
+            }
+          }
+      
+          video.src = selected;
+          VideoForThumbnail.src = selected;
+          video.load();
+          VideoForThumbnail.load();
+          video.play().then(() => {
+            playPauseBtn.textContent = '⏸';
+          }).catch(e => console.log(e));
+        }
+    
+        function togglePlayPause() {
+          if (video.paused) {
+            video.play();
+            playPauseBtn.textContent = '⏸';
+          } else {
+            video.pause();
+            playPauseBtn.textContent = '▶';
+          }
+          hideContextMenu();
+        }
+    
+        function updateProgress() {
+          const percent = (video.currentTime / video.duration) * 100;
+          progressBar.style.width = `${percent}%`;
+          
+          const currentMinutes = Math.floor(video.currentTime / 60);
+          const currentSeconds = Math.floor(video.currentTime % 60).toString().padStart(2, '0');
+          const durationMinutes = Math.floor(video.duration / 60);
+          const durationSeconds = Math.floor(video.duration % 60).toString().padStart(2, '0');
+          
+          timeDisplay.textContent = `${currentMinutes}:${currentSeconds} / ${durationMinutes}:${durationSeconds}`;
+        }
+    
+        function setProgress(e) {
+          const width = progressContainer.clientWidth;
+          const clickX = e.offsetX;
+          const duration = video.duration;
+          video.currentTime = (clickX / width) * duration;
+        }
+    
+        function toggleMute() {
+          video.muted = !video.muted;
+          if (video.muted) {
+            volumeBtn.textContent = '🔇';
+            volumeSlider.value = 0;
+          } else {
+            updateVolume(video.volume);
+          }
+          hideContextMenu();
+        }
+    
+        function handleVolumeChange() {
+          video.muted = false;
+          updateVolume(volumeSlider.value);
+        }
+    
+        function goFullscreen() {
+          if (
+            document.fullscreenElement || 
+            document.webkitFullscreenElement || 
+            document.msFullscreenElement
+          ) {
+            // フルスクリーンを解除
+            if (document.exitFullscreen) {
+              document.exitFullscreen();
+            } else if (document.webkitExitFullscreen) {
+              document.webkitExitFullscreen();
+            } else if (document.msExitFullscreen) {
+              document.msExitFullscreen();
+            }
+          } else {
+            // フルスクリーンにする
+            if (videoContainer.requestFullscreen) {
+              videoContainer.requestFullscreen();
+            } else if (videoContainer.webkitRequestFullscreen) {
+              videoContainer.webkitRequestFullscreen();
+            } else if (videoContainer.msRequestFullscreen) {
+              videoContainer.msRequestFullscreen();
+            }
+          }
+          hideContextMenu();
+        }
+        
+        // 全画面変更時の字幕サイズ調整
+        function updateSubtitleScaleForFullscreen() {
+          if (document.fullscreenElement || document.webkitFullscreenElement || 
+              document.mozFullScreenElement || document.msFullscreenElement) {
+            // 全画面モード
+            const fullscreenWidth = window.innerWidth;
+            const scaleFactor = fullscreenWidth / normalVideoWidth;
+            document.documentElement.style.setProperty('--fullscreen-scale', scaleFactor);
+          } else {
+            // 通常モード
+            document.documentElement.style.setProperty('--fullscreen-scale', 1);
+          }
+        }
+    
+        // 字幕関連の関数
+        function toggleSubtitles() {
+          subtitlesEnabled = !subtitlesEnabled;
+          subtitleToggle.checked = subtitlesEnabled;
+          subtitleTrackElement.track.mode = subtitlesEnabled ? 'showing' : 'hidden';
+          subtitleBtn.style.color = subtitlesEnabled ? '#00ccff' : '#666';
+          hideContextMenu();
+        }
+    
+        function updateSubtitleSize(value) {
+          const size = parseFloat(value);
+          subtitleSizeInput.value = size;
+          subtitleSize.value = size;
+          
+          // 字幕サイズを制御
+          document.documentElement.style.setProperty('--subtitle-scale', size);
+          
+          // VTTCueのlineプロパティには数値のみを設定
+          const track = subtitleTrackElement.track;
+          if (track && track.cues) {
+            for (let i = 0; i < track.cues.length; i++) {
+              track.cues[i].line = 90;
+              track.cues[i].snapToLines = false;
+            }
+          }
+        }
+        
+        function changeSubtitleTrack() {
+          const selectedTrack = subtitleTrack.value;
+          subtitleTrackElement.src = selectedTrack;
+          subtitleTrackElement.track.mode = selectedTrack && subtitlesEnabled ? 'showing' : 'hidden';
+          
+          // トラック変更後に再度読み込み
+          video.textTracks[0].mode = 'hidden';
+          if (selectedTrack) {
+            video.textTracks[0].mode = subtitlesEnabled ? 'showing' : 'hidden';
+          }
+        }
+    
+        function toggleSubtitleMenu() {
+          document.getElementById('subtitleToggle').checked ^= true;
+          toggleSubtitles();
+        }
+        
+        // フレームプレビュー関連
+        function showFramePreview(e) {
+          if (!videoBlob) return;
+          
+          const progressRect = progressContainer.getBoundingClientRect();
+          const clickX = e.clientX - progressRect.left;
+          const duration = video.duration;
+          const previewTime = (clickX / progressRect.width) * duration;
+          
+          // 時間表示を更新
+          const previewMinutes = Math.floor(previewTime / 60);
+          const previewSeconds = Math.floor(previewTime % 60).toString().padStart(2, '0');
+          frameTime.textContent = `${previewMinutes}:${previewSeconds}`;
+          
+          // プレビュー位置を更新
+          framePreview.style.left = `${e.clientX}px`;
+          framePreview.style.display = 'block';
+          
+          // キャッシュがあればそれを使う
+          const cacheKey = Math.floor(previewTime);
+          if (frameCache[cacheKey]) {
+            previewImage.src = frameCache[cacheKey];
+            return;
+          }
+          
+          // フレームを取得
+          videoFrames({
+            url: URL.createObjectURL(videoBlob),
+            count: 1,
+            startTime: previewTime,
+            endTime: previewTime + 0.1
+          }).then((frames) => {
+            if (frames.length > 0) {
+              previewImage.src = frames[0].image;
+              frameCache[cacheKey] = frames[0].image; // キャッシュに保存
+            }
+          }).catch(err => {
+            console.error('Error getting video frame:', err);
+          });
+        }
+        
+        function hideFramePreview() {
+          framePreview.style.display = 'none';
+        }
+        
+        // 右クリックメニュー関連
+        function showContextMenu(e) {
+          e.preventDefault();
+          contextMenu.style.display = 'block';
+          contextMenu.style.left = `${e.clientX}px`;
+          contextMenu.style.top = `${e.clientY}px`;
+        }
+        
+        function hideContextMenu() {
+          contextMenu.style.display = 'none';
+        }
+        
+        // 音声/字幕のみモード
+        function toggleAudioOnlyMode() {
+          isAudioOnlyMode = !isAudioOnlyMode;
+          
+          if (isAudioOnlyMode) {
+            video.style.opacity = '0';
+            audioOnlyModeIndicator.classList.add('active');
+          } else {
+            video.style.opacity = '1';
+            audioOnlyModeIndicator.classList.remove('active');
+          }
+          
+          hideContextMenu();
+        }
+        
+        // イベントリスナー
+        videoSelect.addEventListener('change', handleVideoChange);
+    
+        ['input', 'change', 'mouseup'].forEach(eventName => {
+          speedRange.addEventListener(eventName, () => updatePlaybackRate(speedRange.value));
+          volumeRange.addEventListener(eventName, () => updateVolume(volumeRange.value));
+          subtitleSize.addEventListener(eventName, () => updateSubtitleSize(subtitleSize.value));
+        });
+    
+        speedInput.addEventListener('input', () => updatePlaybackRate(speedInput.value));
+        volumeInput.addEventListener('input', () => updateVolume(volumeInput.value));
+        subtitleSizeInput.addEventListener('input', () => updateSubtitleSize(subtitleSizeInput.value));
+    
+        loopCheckbox.addEventListener('change', () => {
+          video.loop = loopCheckbox.checked;
+        });
+    
+        subtitleToggle.addEventListener('change', toggleSubtitles);
+        subtitleTrack.addEventListener('change', changeSubtitleTrack);
+        subtitleBtn.addEventListener('click', toggleSubtitleMenu);
+    
+        playPauseBtn.addEventListener('click', togglePlayPause);
+        video.addEventListener('click', togglePlayPause);
+        video.addEventListener('play', () => playPauseBtn.textContent = '⏸');
+        video.addEventListener('pause', () => playPauseBtn.textContent = '▶');
+        video.addEventListener('timeupdate', updateProgress);
+        progressContainer.addEventListener('click', setProgress);
+        progressContainer.addEventListener('mousedown', () => isDragging = true);
+        document.addEventListener('mouseup', () => isDragging = false);
+        // マウスホバー時のプレビュー表示
+        progressContainer.addEventListener('mousemove', function(e) {
+          if (isDragging) {
+            const width = progressContainer.clientWidth;
+            const clickX = e.offsetX;
+            const duration = video.duration;
+            const previewTime = (clickX / width) * duration;
+            
+            // プレビュー位置を更新
+            previewContainer.style.left = `${e.clientX - 100}px`;
+            previewContainer.style.bottom = '60px';
+            previewContainer.style.display = 'block';
+            
+            // 時間表示を更新
+            const minutes = Math.floor(previewTime / 60);
+            const seconds = Math.floor(previewTime % 60).toString().padStart(2, '0');
+            document.getElementById('previewTime').textContent = `${minutes}:${seconds}`;
+            
+            // サムネイル画像を更新
+            updateThumbnail(previewTime);
+          } else {
+            previewContainer.style.display = 'none';
+          }
+        });
+        
+        // サムネイル画像更新関数
+        function updateThumbnail(time) {
+          VideoForThumbnail.currentTime = time;
+          
+          VideoForThumbnail.addEventListener('seeked', function() {
+            canvas.width = VideoForThumbnail.videoWidth;
+            canvas.height = VideoForThumbnail.videoHeight;
+            ctx.drawImage(VideoForThumbnail, 0, 0, canvas.width, canvas.height);
+            preview.src = canvas.toDataURL('image/jpeg');
+          }, { once: true });
+        }
+    
+        
+        // プログレスバーのホバーイベント
+        progressContainer.addEventListener('mouseenter', () => {
+          isHoveringProgress = true;
+          clearTimeout(hoverTimeout);
+        });
+        
+        progressContainer.addEventListener('mouseleave', () => {
+          isHoveringProgress = false;
+          hoverTimeout = setTimeout(() => {
+            if (!isDragging) hideFramePreview();
+          }, 300);
+        });
+        
+        volumeBtn.addEventListener('click', toggleMute);
+        volumeSlider.addEventListener('input', handleVolumeChange);
+        fullscreenBtn.addEventListener('click', goFullscreen);
+    
+        // 全画面変更イベントを監視
+        document.addEventListener('fullscreenchange', updateSubtitleScaleForFullscreen);
+        document.addEventListener('webkitfullscreenchange', updateSubtitleScaleForFullscreen);
+        document.addEventListener('mozfullscreenchange', updateSubtitleScaleForFullscreen);
+        document.addEventListener('MSFullscreenChange', updateSubtitleScaleForFullscreen);
+        
+        // 右クリックメニューイベント
+        videoContainer.addEventListener('contextmenu', showContextMenu);
+        document.addEventListener('click', hideContextMenu);
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape') hideContextMenu();
+        });
+    
+        video.addEventListener('loadedmetadata', () => {
+          updatePlaybackRate(speedRange.value);
+          updateVolume(volumeRange.value);
+          updateSubtitleSize(subtitleSize.value);
+          video.loop = loopCheckbox.checked;
+          toggleSubtitles();
+          updateProgress();
+          normalVideoWidth = videoContainer.clientWidth;
+        });
+        video.addEventListener("loadeddata", async () => {
+      const response = await fetch(video.src);
+      videoBlob = await response.blob();
+    });
+    
+    // 保存
+    video.addEventListener('timeupdate', () => {
+      localStorage.setItem('radioTaisoTime', video.currentTime);
+    });
+    
+    // 復元
+    window.addEventListener('load', () => {
+      const savedTime = parseFloat(localStorage.getItem('radioTaisoTime'));
+      if (!isNaN(savedTime)) {
+        video.currentTime = savedTime;
+      }
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.target.tagName === 'INPUT') return; // 入力中は無視
+      switch (e.key.toLowerCase()) {
+        case ' ': e.preventDefault(); togglePlayPause(); break;
+        case 'f': goFullscreen(); break;
+        case 'm': toggleMute(); break;
+        case 'arrowright': video.currentTime += 5; break;
+        case 'arrowleft': video.currentTime -= 5; break;
+      }
+    });
+    
+        // CSS変数を設定
+        document.documentElement.style.setProperty('--subtitle-scale', '1');
+        document.documentElement.style.setProperty('--subtitle-border-radius', '10px');
+        document.documentElement.style.setProperty('--fullscreen-scale', '1');
+    </script>
+</body>
+
+</html>
